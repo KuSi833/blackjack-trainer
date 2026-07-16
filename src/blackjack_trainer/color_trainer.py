@@ -50,8 +50,8 @@ ROWS = [
 ]
 
 # --- Colors (truecolor, black text on chart-matching backgrounds) ------------
-FG_BLACK = "38;2;0;0;0"
-FG_MISS = "1;38;2;180;0;0"  # bold dark-red letter for a corrected miss
+FG_BLACK = "1;38;2;0;0;0"
+BG_MISS = "48;2;255;235;59"  # bright yellow — flags a corrected miss
 BG = {
     "H": "48;2;46;204;113",  # green
     "S": "48;2;231;76;60",  # red
@@ -69,9 +69,10 @@ def cell(action, *, current=False, miss=False):
         inner = " ?? " if current else " ·  "
         style = "\033[7m" if current else DIM
         return f"{style}{inner}{RESET}"
-    # correct-color background; a missed cell gets a bold red letter so it pops
-    fg = FG_MISS if miss else FG_BLACK
-    return f"\033[{fg};{BG[action]}m {action}  {RESET}"
+    # missed cells get a bright yellow background (not an action color) so they
+    # pop; the letter still shows the correct action
+    bg = BG_MISS if miss else BG[action]
+    return f"\033[{FG_BLACK};{bg}m {action}  {RESET}"
 
 
 def clear():
