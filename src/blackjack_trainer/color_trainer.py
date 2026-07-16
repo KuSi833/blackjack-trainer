@@ -9,6 +9,8 @@ Keys:  h = Hit (green)   s = Stand (red)   d = Double (blue)   p = Split (orange
        q or Ctrl-C = quit
 """
 
+import argparse
+import random
 import sys
 import termios
 import tty
@@ -131,12 +133,27 @@ def getch():
     return ch
 
 
-def run():
+def build_order(mode):
+    """Return the sequence of flat cell indices to drill, per mode."""
+    total = sum(len(row) for _s, _l, row in ROWS)
+    if mode == "in-order":
+        return list(range(total))
+    if mode == "random":
+        order = list(range(total))
+        random.shuffle(order)
+        return order
+    if mode == "random-row":
+        rows = [[r * 10 + c for c in range(10)] for r in range(len(ROWS))]
+        random.shuffle(rows)
+        return [idx for row in rows for idx in row]
+    raise ValueError(f"unknown mode: {mode}")
+
+
+def run(order):
     flat_correct = [a for (_s, _l, row) in ROWS for a in row]
     total = len(flat_correct)
     answers = [" "] * total
     misses = set()  # cells answered wrong at least once
-    order = list(range(total))
     status = "Fill every cell. Type h / s / d / p."
 
     key_to_action = {"h": "H", "s": "S", "d": "D", "p": "P"}
@@ -174,9 +191,9 @@ def run():
         print("Bailed. Later.")
         return
 
-    # Re-drill misses until clean
+    # Re-drill misses until clean, in the order they appear in the drill sequence
     while misses:
-        redo = sorted(misses)
+        redo = [idx for idx in order if idx in misses]
         # reset those cells to blank so you truly re-enter them
         for idx in redo:
             answers[idx] = " "
@@ -192,9 +209,26 @@ def run():
     print(f"  {DIM}Run again to re-test from a blank grid.{RESET}")
 
 
-def main():
+MODES = ("in-order", "random-row", "random")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        prog="blackjack-trainer",
+        description="Blackjack basic-strategy trainers (Dealer Stands Soft 17).",
+    )
+    sub = parser.add_subparsers(dest="trainer", required=True)
+
+    mt = sub.add_parser("map-trainer", help="reconstruct the strategy chart from memory")
+    mt_sub = mt.add_subparsers(dest="mode", required=True)
+    mt_sub.add_parser("in-order", help="cells top-left to bottom-right")
+    mt_sub.add_parser("random-row", help="whole rows in random order, cells left-to-right")
+    mt_sub.add_parser("random", help="final boss: every cell in fully random order")
+
+    args = parser.parse_args(argv)
+
     try:
-        run()
+        run(build_order(args.mode))
     except KeyboardInterrupt:
         sys.stdout.write(RESET + "\n")
 
