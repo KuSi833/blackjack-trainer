@@ -20,15 +20,15 @@ COLS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "A"]
 # (section, row-label, 10 actions for cols 2..A)
 ROWS = [
     ("HARD", "17+", "SSSSSSSSSS"),
-    ("HARD", "16",  "SSSSSHHHHH"),
-    ("HARD", "15",  "SSSSSHHHHH"),
-    ("HARD", "14",  "SSSSSHHHHH"),
-    ("HARD", "13",  "SSSSSHHHHH"),
-    ("HARD", "12",  "HHSSSHHHHH"),
-    ("HARD", "11",  "DDDDDDDDDD"),
-    ("HARD", "10",  "DDDDDDDDHH"),
-    ("HARD", "9",   "HDDDDHHHHH"),
-    ("HARD", "8",   "HHHHHHHHHH"),
+    ("HARD", "16", "SSSSSHHHHH"),
+    ("HARD", "15", "SSSSSHHHHH"),
+    ("HARD", "14", "SSSSSHHHHH"),
+    ("HARD", "13", "SSSSSHHHHH"),
+    ("HARD", "12", "HHSSSHHHHH"),
+    ("HARD", "11", "DDDDDDDDDD"),
+    ("HARD", "10", "DDDDDDDDHH"),
+    ("HARD", "9", "HDDDDHHHHH"),
+    ("HARD", "8", "HHHHHHHHHH"),
     ("SOFT", "A,9", "SSSSSSSSSS"),
     ("SOFT", "A,8", "SSSSDSSSSS"),
     ("SOFT", "A,7", "DDDDDSSHHH"),
@@ -37,25 +37,25 @@ ROWS = [
     ("SOFT", "A,4", "HHDDDHHHHH"),
     ("SOFT", "A,3", "HHHDDHHHHH"),
     ("SOFT", "A,2", "HHHDDHHHHH"),
-    ("PAIR", "AA",  "PPPPPPPPPP"),
-    ("PAIR", "TT",  "SSSSSSSSSS"),
-    ("PAIR", "99",  "PPPPPSPPSS"),
-    ("PAIR", "88",  "PPPPPPPPPP"),
-    ("PAIR", "77",  "PPPPPPHHHH"),
-    ("PAIR", "66",  "PPPPPHHHHH"),
-    ("PAIR", "55",  "DDDDDDDDHH"),
-    ("PAIR", "44",  "HHHPPHHHHH"),
-    ("PAIR", "33",  "PPPPPPHHHH"),
-    ("PAIR", "22",  "PPPPPPHHHH"),
+    ("PAIR", "AA", "PPPPPPPPPP"),
+    ("PAIR", "TT", "SSSSSSSSSS"),
+    ("PAIR", "99", "PPPPPSPPSS"),
+    ("PAIR", "88", "PPPPPPPPPP"),
+    ("PAIR", "77", "PPPPPPHHHH"),
+    ("PAIR", "66", "PPPPPHHHHH"),
+    ("PAIR", "55", "DDDDDDDDHH"),
+    ("PAIR", "44", "HHHPPHHHHH"),
+    ("PAIR", "33", "PPPPPPHHHH"),
+    ("PAIR", "22", "PPPPPPHHHH"),
 ]
 
 # --- Colors (truecolor, black text on chart-matching backgrounds) ------------
 FG_BLACK = "38;2;0;0;0"
 BG = {
-    "H": "48;2;46;204;113",   # green
-    "S": "48;2;231;76;60",    # red
-    "D": "48;2;52;152;219",   # blue
-    "P": "48;2;243;156;18",   # orange
+    "H": "48;2;46;204;113",  # green
+    "S": "48;2;231;76;60",  # red
+    "D": "48;2;52;152;219",  # blue
+    "P": "48;2;243;156;18",  # orange
 }
 RESET = "\033[0m"
 DIM = "\033[2m"
@@ -83,7 +83,7 @@ def draw(answers, cur_idx, misses):
     out = []
     out.append(f"{BOLD}Blackjack Strategy — Coloring Trainer  (Dealer Stands Soft 17){RESET}")
     out.append(
-        f"  {BG['H']and ''}"
+        f"  {BG['H'] and ''}"
         f"\033[{FG_BLACK};{BG['H']}m h {RESET} Hit   "
         f"\033[{FG_BLACK};{BG['S']}m s {RESET} Stand   "
         f"\033[{FG_BLACK};{BG['D']}m d {RESET} Double   "
@@ -133,7 +133,7 @@ def run():
     flat_correct = [a for (_s, _l, row) in ROWS for a in row]
     total = len(flat_correct)
     answers = [" "] * total
-    misses = set()          # cells answered wrong at least once
+    misses = set()  # cells answered wrong at least once
     order = list(range(total))
     status = "Fill every cell. Type h / s / d / p."
 
@@ -168,12 +168,13 @@ def run():
 
     # First full pass
     if not drill(order):
-        clear(); print("Bailed. Later."); return
+        clear()
+        print("Bailed. Later.")
+        return
 
     # Re-drill misses until clean
     while misses:
         redo = sorted(misses)
-        misses_snapshot = set(misses)
         # reset those cells to blank so you truly re-enter them
         for idx in redo:
             answers[idx] = " "
@@ -189,8 +190,12 @@ def run():
     print(f"  {DIM}Run again to re-test from a blank grid.{RESET}")
 
 
-if __name__ == "__main__":
+def main():
     try:
         run()
     except KeyboardInterrupt:
         sys.stdout.write(RESET + "\n")
+
+
+if __name__ == "__main__":
+    main()
