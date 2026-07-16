@@ -90,8 +90,8 @@ def draw(answers, cur_idx, misses):
         f"\033[{FG_BLACK};{BG['P']}m p {RESET} Split      {DIM}q=quit{RESET}"
     )
     out.append("")
-    # column header
-    header = "      " + "".join(f"{c:>4}" for c in COLS)
+    # column header — align each label to the letter position inside its 4-char cell
+    header = "      " + "".join(f" {c:<3}" for c in COLS)
     out.append(f"{BOLD}{header}{RESET}   {DIM}dealer{RESET}")
 
     prev_section = None
