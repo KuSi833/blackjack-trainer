@@ -10,10 +10,14 @@ Keys:  h = Hit (green)   s = Stand (red)   d = Double (blue)   p = Split (orange
 """
 
 import argparse
+import json
+import os
 import random
 import sys
 import termios
 import tty
+from datetime import datetime, timezone
+from pathlib import Path
 
 # --- Strategy table: Dealer Stands on Soft 17 -------------------------------
 # Columns are dealer upcard: 2 3 4 5 6 7 8 9 10 A
@@ -155,12 +159,62 @@ def build_order(mode, section=None):
     raise ValueError(f"unknown mode: {mode}")
 
 
-def run(order):
+def stats_dir():
+    """Local, non-version-controlled folder for saved sessions."""
+    base = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    d = Path(base) / "blackjack-trainer" / "sessions"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def save_stats(order, mode, section, attempts, wrongs, confusions, completed):
+    """Write one session's stats as JSON; return the file path."""
+    now = datetime.now(timezone.utc)
+
+    def cell_name(idx):
+        r, c = divmod(idx, 10)
+        return f"{ROWS[r][1]} vs {COLS[c]}"
+
+    cells = [
+        {
+            "hand": ROWS[idx // 10][1],
+            "dealer": COLS[idx % 10],
+            "section": ROWS[idx // 10][0],
+            "attempts": attempts[idx],
+            "wrong": wrongs[idx],
+        }
+        for idx in order
+    ]
+    record = {
+        "timestamp": now.isoformat(),
+        "order": mode,
+        "section": section or "ALL",
+        "cells_drilled": len(order),
+        "completed": completed,
+        "cells_missed": sum(1 for idx in order if wrongs[idx]),
+        "total_wrong_answers": sum(wrongs.values()),
+        # every wrong answer, so trends/confusions can be analyzed later
+        "misses": [
+            {"cell": cell_name(idx), "you_said": g, "correct": c} for (idx, g, c) in confusions
+        ],
+        "cells": cells,
+    }
+    path = stats_dir() / f"{now.strftime('%Y%m%dT%H%M%SZ')}.json"
+    path.write_text(json.dumps(record, indent=2))
+    return path
+
+
+def run(order, mode="in-order", section=None):
     flat_correct = [a for (_s, _l, row) in ROWS for a in row]
     total = len(flat_correct)
     answers = [" "] * total
-    misses = set()  # cells answered wrong at least once
+    misses = set()  # cells answered wrong in the current round (drives re-drill)
     status = "Fill every cell. Type h / s / d / p."
+
+    # session stats, keyed by flat cell index
+    attempts = {idx: 0 for idx in order}
+    wrongs = {idx: 0 for idx in order}
+    confusions = []  # list of (idx, guess, correct)
 
     key_to_action = {"h": "H", "s": "S", "d": "D", "p": "P"}
 
@@ -182,37 +236,46 @@ def run(order):
             guess = key_to_action[ch]
             correct = flat_correct[idx]
             answers[idx] = correct  # always show the correct color in the picture
+            attempts[idx] += 1
             if guess == correct:
                 status = "✓"
             else:
                 misses.add(idx)
+                wrongs[idx] += 1
+                confusions.append((idx, guess, correct))
                 names = {"H": "HIT", "S": "STAND", "D": "DOUBLE", "P": "SPLIT"}
                 status = f"✗ you said {names[guess]} — it's {names[correct]}"
             i += 1
         return True
 
+    completed = True
+
     # First full pass
     if not drill(order):
-        clear()
-        print("Bailed. Later.")
-        return
+        completed = False
+    else:
+        # Re-drill misses until clean, in the order they appear in the sequence
+        while misses:
+            redo = [idx for idx in order if idx in misses]
+            for idx in redo:
+                answers[idx] = " "  # blank so you truly re-enter them
+            misses.clear()
+            status = f"Re-drill: {len(redo)} missed cell(s)."
+            if not drill(redo):
+                completed = False
+                break
 
-    # Re-drill misses until clean, in the order they appear in the drill sequence
-    while misses:
-        redo = [idx for idx in order if idx in misses]
-        # reset those cells to blank so you truly re-enter them
-        for idx in redo:
-            answers[idx] = " "
-        misses.clear()
-        status = f"Re-drill: {len(redo)} missed cell(s)."
-        if not drill(redo):
-            break
-        # any still wrong got re-added to misses; loop again
+    path = save_stats(order, mode, section, attempts, wrongs, confusions, completed)
 
     clear()
     draw(answers, -1, set())
-    print(f"  {BOLD}Chart complete and clean.{RESET}  ({total} cells)")
-    print(f"  {DIM}Run again to re-test from a blank grid.{RESET}")
+    if completed:
+        print(f"  {BOLD}Chart complete and clean.{RESET}  ({len(order)} cells)")
+    else:
+        print(f"  {BOLD}Bailed early.{RESET}")
+    first_pass_wrong = sum(1 for idx in order if wrongs[idx])
+    print(f"  {DIM}{first_pass_wrong}/{len(order)} cells missed at least once.{RESET}")
+    print(f"  {DIM}Stats → {path}{RESET}")
 
 
 MODES = ("in-order", "random-row", "random")
@@ -246,7 +309,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     try:
-        run(build_order(args.order, args.section))
+        run(build_order(args.order, args.section), args.order, args.section)
     except KeyboardInterrupt:
         sys.stdout.write(RESET + "\n")
 

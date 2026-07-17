@@ -32,6 +32,14 @@ Keys: `h` Hit · `s` Stand · `d` Double · `p` Split · `q` quit
 
 Needs a real terminal (single-keypress input) and a truecolor-capable emulator.
 
+## Session stats
+
+Each finished (or bailed) session writes a JSON record to
+`~/.local/share/blackjack-trainer/sessions/` (respects `$XDG_DATA_HOME`). It logs
+the order/section, per-cell attempt and miss counts, and every wrong answer
+(what you typed vs the correct action) — handy for spotting which cells you keep
+confusing.
+
 ## Dev
 
 ```sh
