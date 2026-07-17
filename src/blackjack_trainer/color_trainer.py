@@ -133,19 +133,25 @@ def getch():
     return ch
 
 
-def build_order(mode):
-    """Return the sequence of flat cell indices to drill, per mode."""
-    total = sum(len(row) for _s, _l, row in ROWS)
+def build_order(mode, section=None):
+    """Return the sequence of flat cell indices to drill, per mode.
+
+    section: restrict to one of "HARD", "SOFT", "PAIR" (None = whole chart).
+    """
+    rows = list(range(len(ROWS)))
+    if section is not None:
+        rows = [r for r in rows if ROWS[r][0] == section]
+
     if mode == "in-order":
-        return list(range(total))
+        return [r * 10 + c for r in rows for c in range(10)]
     if mode == "random":
-        order = list(range(total))
+        order = [r * 10 + c for r in rows for c in range(10)]
         random.shuffle(order)
         return order
     if mode == "random-row":
-        rows = [[r * 10 + c for c in range(10)] for r in range(len(ROWS))]
-        random.shuffle(rows)
-        return [idx for row in rows for idx in row]
+        blocks = [[r * 10 + c for c in range(10)] for r in rows]
+        random.shuffle(blocks)
+        return [idx for block in blocks for idx in block]
     raise ValueError(f"unknown mode: {mode}")
 
 
@@ -210,6 +216,7 @@ def run(order):
 
 
 MODES = ("in-order", "random-row", "random")
+SECTIONS = ("HARD", "SOFT", "PAIR")
 
 
 def main(argv=None):
@@ -221,14 +228,23 @@ def main(argv=None):
 
     mt = sub.add_parser("map-trainer", help="reconstruct the strategy chart from memory")
     mt_sub = mt.add_subparsers(dest="mode", required=True)
-    mt_sub.add_parser("in-order", help="cells top-left to bottom-right")
-    mt_sub.add_parser("random-row", help="whole rows in random order, cells left-to-right")
-    mt_sub.add_parser("random", help="final boss: every cell in fully random order")
+    mode_help = {
+        "in-order": "cells top-left to bottom-right",
+        "random-row": "whole rows in random order, cells left-to-right",
+        "random": "final boss: every cell in fully random order",
+    }
+    for mode in MODES:
+        p = mt_sub.add_parser(mode, help=mode_help[mode])
+        p.add_argument(
+            "--section",
+            choices=SECTIONS,
+            help="train only one section (default: whole chart)",
+        )
 
     args = parser.parse_args(argv)
 
     try:
-        run(build_order(args.mode))
+        run(build_order(args.mode, args.section))
     except KeyboardInterrupt:
         sys.stdout.write(RESET + "\n")
 

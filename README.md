@@ -24,6 +24,12 @@ uv run blackjack-trainer map-trainer random-row   # whole rows shuffled, cells l
 uv run blackjack-trainer map-trainer random        # final boss: every cell shuffled
 ```
 
+Add `--section HARD|SOFT|PAIR` to any mode to drill just one section:
+
+```sh
+uv run blackjack-trainer map-trainer random --section PAIR
+```
+
 Keys: `h` Hit · `s` Stand · `d` Double · `p` Split · `q` quit
 
 Needs a real terminal (single-keypress input) and a truecolor-capable emulator.
