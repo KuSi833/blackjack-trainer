@@ -19,16 +19,14 @@ uv sync
 ## Run
 
 ```sh
-uv run blackjack-trainer map-trainer in-order     # cells top-left to bottom-right
-uv run blackjack-trainer map-trainer random-row   # whole rows shuffled, cells left-to-right
-uv run blackjack-trainer map-trainer random        # final boss: every cell shuffled
+uv run blackjack-trainer map                      # whole chart, top-left to bottom-right
+uv run blackjack-trainer map --order random-row   # whole rows shuffled, cells left-to-right
+uv run blackjack-trainer map --order random       # final boss: every cell shuffled
+uv run blackjack-trainer map --section PAIR        # drill one section (HARD|SOFT|PAIR)
+uv run blackjack-trainer map --order random --section SOFT   # flags compose
 ```
 
-Add `--section HARD|SOFT|PAIR` to any mode to drill just one section:
-
-```sh
-uv run blackjack-trainer map-trainer random --section PAIR
-```
+`--order` defaults to `in-order`; `--section` defaults to the whole chart.
 
 Keys: `h` Hit · `s` Stand · `d` Double · `p` Split · `q` quit
 

@@ -226,25 +226,27 @@ def main(argv=None):
     )
     sub = parser.add_subparsers(dest="trainer", required=True)
 
-    mt = sub.add_parser("map-trainer", help="reconstruct the strategy chart from memory")
-    mt_sub = mt.add_subparsers(dest="mode", required=True)
-    mode_help = {
-        "in-order": "cells top-left to bottom-right",
-        "random-row": "whole rows in random order, cells left-to-right",
-        "random": "final boss: every cell in fully random order",
-    }
-    for mode in MODES:
-        p = mt_sub.add_parser(mode, help=mode_help[mode])
-        p.add_argument(
-            "--section",
-            choices=SECTIONS,
-            help="train only one section (default: whole chart)",
-        )
+    mt = sub.add_parser("map", help="reconstruct the strategy chart from memory")
+    mt.add_argument(
+        "--order",
+        choices=MODES,
+        default="in-order",
+        help=(
+            "cell order: in-order (top-left to bottom-right, default), "
+            "random-row (rows shuffled, cells left-to-right), "
+            "random (every cell shuffled)"
+        ),
+    )
+    mt.add_argument(
+        "--section",
+        choices=SECTIONS,
+        help="train only one section (default: whole chart)",
+    )
 
     args = parser.parse_args(argv)
 
     try:
-        run(build_order(args.mode, args.section))
+        run(build_order(args.order, args.section))
     except KeyboardInterrupt:
         sys.stdout.write(RESET + "\n")
 
